@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #080b11;
+  --foreground: #f1f5f9;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Bloomberg/TradingView styled scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080b11;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Tabular numbers for financial metrics */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Subtle glow for terminal accents */
+.glow-green {
+  text-shadow: 0 0 10px rgba(0, 230, 118, 0.4);
+}
+
+.glow-red {
+  text-shadow: 0 0 10px rgba(255, 23, 68, 0.4);
+}
+
+.glow-cyan {
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+}
