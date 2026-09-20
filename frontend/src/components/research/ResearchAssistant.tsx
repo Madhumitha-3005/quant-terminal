@@ -50,7 +50,7 @@ export default function ResearchAssistant({ symbol, backtestResults, onNotify }:
             <p className="mt-0.5 text-[11px] text-slate-500">Ask about the current {symbol} analysis</p>
           </div>
         </div>
-        <span className="text-[10px] text-slate-600">FEATHERLESS // CONTEXT-AWARE</span>
+        <span className="text-[10px] text-slate-600">CONTEXT-AWARE</span>
       </div>
 
       {answer && (

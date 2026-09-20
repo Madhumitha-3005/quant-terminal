@@ -33,12 +33,17 @@ export default function AuthScreen({ onAuthenticated }: AuthScreenProps) {
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const normalizedEmail = email.trim().toLowerCase();
+    const enteredEmail = email.trim();
+    const normalizedEmail = enteredEmail.toLowerCase();
     const accounts = readAccounts();
     setError("");
 
-    if (!normalizedEmail || !password) {
+    if (!enteredEmail || !password) {
       setError("Enter both your email and password.");
+      return;
+    }
+    if (enteredEmail !== normalizedEmail || !/^[a-z0-9][a-z0-9._%+-]*@gmail\.com$/.test(enteredEmail)) {
+      setError("Use a lowercase Gmail address ending with @gmail.com.");
       return;
     }
     if (password.length < 6) {

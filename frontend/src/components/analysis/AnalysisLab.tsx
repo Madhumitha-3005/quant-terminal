@@ -39,7 +39,7 @@ export default function AnalysisLab({ isOpen, selectedSymbol, onClose, onNotify 
       if (tab === "portfolio") setResult(await getPortfolioRisk(weights));
       if (tab === "strategies") setResult(await compareStrategies(selectedSymbol, costBps, slippageBps));
       if (tab === "audit") setResult(await runBacktestAudit(selectedSymbol));
-      onNotify("Analysis completed with backend-calculated results.", "success");
+      onNotify("Analysis completed successfully.", "success");
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "Analysis failed";
       setError(message);
@@ -93,12 +93,12 @@ export default function AnalysisLab({ isOpen, selectedSymbol, onClose, onNotify 
               </div>)}
               {Math.abs(weightTotal - 1) > 0.0001 && <p className="rounded border border-amber-800/70 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-300">Weights must total 100%. Current: {(weightTotal * 100).toFixed(1)}%</p>}
               <button onClick={run} disabled={isLoading || Math.abs(weightTotal - 1) > 0.0001} className="w-full rounded border border-cyan-700 bg-cyan-950/70 px-3 py-2 text-xs font-bold text-cyan-300 disabled:opacity-50">{isLoading ? "CALCULATING..." : tab === "stress" ? "RUN HYPOTHETICAL SCENARIO" : "CALCULATE PORTFOLIO RISK"}</button>
-              <p className="text-[10px] leading-relaxed text-slate-600">{tab === "stress" ? "Hypothetical simulation only. It does not predict future prices." : "Uses overlapping historical OHLCV data from the backend."}</p>
+              <p className="text-[10px] leading-relaxed text-slate-600">{tab === "stress" ? "Hypothetical simulation only. It does not predict future prices." : "Uses overlapping historical market data."}</p>
             </div>
             <ResultPanel result={result} error={error} tab={tab} />
           </div>
         ) : (
-          <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.5fr]">
+          <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-[minmax(220px,0.8fr)_minmax(0,1.5fr)]">
             <div className="space-y-3">
               <div className="rounded border border-slate-800 bg-[#0e1626] p-3 text-xs"><span className="text-slate-500">ASSET</span><div className="mt-1 text-lg font-bold text-cyan-300">{selectedSymbol}</div></div>
               {tab === "strategies" && <div className="grid grid-cols-2 gap-2"><label className="text-[10px] text-slate-500">COST BPS<input type="number" min="0" value={costBps} onChange={(event) => setCostBps(Number(event.target.value))} className="mt-1 w-full rounded border border-slate-700 bg-[#080b11] p-2 text-slate-200" /></label><label className="text-[10px] text-slate-500">SLIPPAGE BPS<input type="number" min="0" value={slippageBps} onChange={(event) => setSlippageBps(Number(event.target.value))} className="mt-1 w-full rounded border border-slate-700 bg-[#080b11] p-2 text-slate-200" /></label></div>}
@@ -114,10 +114,10 @@ export default function AnalysisLab({ isOpen, selectedSymbol, onClose, onNotify 
 
 function ResultPanel({ result, error, tab }: { result: any; error: string; tab: LabTab }) {
   if (error) return <div className="rounded border border-rose-800/70 bg-rose-950/20 p-4 text-xs text-rose-300">{error}</div>;
-  if (!result) return <div className="flex min-h-56 items-center justify-center rounded border border-dashed border-slate-800 p-4 text-center text-xs text-slate-600">Run an analysis to see backend-calculated results.</div>;
+  if (!result) return <div className="flex min-h-56 items-center justify-center rounded border border-dashed border-slate-800 p-4 text-center text-xs text-slate-600">Run an analysis to see the results.</div>;
   if (tab === "stress") return <div className="space-y-3 rounded border border-slate-800 bg-[#0e1626] p-4"><Metric label="SCENARIO VALUE" value={`$${result.scenario_value.toLocaleString()}`} /><Metric label="P/L" value={`${result.pnl_pct.toFixed(2)}%`} /><Metric label="RECOVERY REQUIRED" value={`${result.recovery_required_pct.toFixed(2)}%`} /><div className="space-y-2 pt-2">{result.contributions.map((item: any) => <div key={item.symbol} className="flex justify-between text-xs"><span className="text-slate-400">{item.symbol}</span><span className={item.pnl >= 0 ? "text-emerald-400" : "text-rose-400"}>{item.pnl.toFixed(2)}</span></div>)}</div></div>;
   if (tab === "portfolio") return <div className="space-y-3 rounded border border-slate-800 bg-[#0e1626] p-4"><Metric label="PORTFOLIO RETURN" value={`${result.portfolio_return_pct.toFixed(2)}%`} /><Metric label="PORTFOLIO VOLATILITY" value={`${result.portfolio_volatility_pct.toFixed(2)}%`} /><Metric label="MAX DRAWDOWN" value={`${result.portfolio_max_drawdown_pct.toFixed(2)}%`} /><Metric label="CONCENTRATION HHI" value={result.concentration_hhi.toFixed(3)} /><div className="text-[10px] text-slate-500">Analysis: {result.analysis_start} to {result.analysis_end} // {result.data_points} overlapping bars</div></div>;
-  if (tab === "strategies") return <div className="space-y-2 rounded border border-slate-800 bg-[#0e1626] p-4">{result.results.map((item: any) => <div key={item.strategy} className="rounded border border-slate-800 p-3"><div className="mb-2 flex justify-between text-xs font-bold text-cyan-300"><span>{item.strategy.toUpperCase()}</span><span>{item.metrics.total_return_pct.toFixed(2)}%</span></div><div className="grid grid-cols-3 gap-2 text-[10px] text-slate-400"><span>SHARPE {item.metrics.sharpe_ratio.toFixed(2)}</span><span>DD {item.metrics.max_drawdown_pct.toFixed(2)}%</span><span>TRADES {item.metrics.number_of_trades}</span></div></div>)}</div>;
+  if (tab === "strategies") return <div className="min-w-0 space-y-2 rounded border border-slate-800 bg-[#0e1626] p-3 sm:p-4">{result.results.map((item: any) => <div key={item.strategy} className="min-w-0 rounded border border-slate-800 p-3"><div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-xs font-bold text-cyan-300"><span className="break-words">{item.strategy.toUpperCase()}</span><span className="shrink-0">{item.metrics.total_return_pct.toFixed(2)}%</span></div><div className="grid grid-cols-1 gap-2 text-[10px] text-slate-400 sm:grid-cols-3"><span>SHARPE {item.metrics.sharpe_ratio.toFixed(2)}</span><span>DD {item.metrics.max_drawdown_pct.toFixed(2)}%</span><span>TRADES {item.metrics.number_of_trades}</span></div></div>)}</div>;
   return <div className="space-y-2 rounded border border-slate-800 bg-[#0e1626] p-4">{result.checks.map((check: any) => <div key={check.name} className="flex gap-2 border-b border-slate-800 pb-2 text-xs last:border-0"><span className={check.status === "PASS" ? "text-emerald-400" : check.status === "FAIL" ? "text-rose-400" : "text-amber-400"}>{check.status}</span><div><div className="text-slate-200">{check.name}</div><div className="text-[10px] text-slate-500">{check.evidence}</div></div></div>)}</div>;
 }
 

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getSystemStatus, getAssets, getAssetHistory, getFxRates, syncCacheNow } from "../lib/api";
+import { getAssets, getAssetHistory, getFxRates, syncCacheNow } from "../lib/api";
 import Header from "../components/layout/Header";
 import TickerBar from "../components/layout/TickerBar";
 import MetricsPanel from "../components/charts/MetricsPanel";
@@ -15,7 +15,7 @@ import AuthScreen from "../components/auth/AuthScreen";
 import Toast, { ToastTone } from "../components/feedback/Toast";
 import AnalysisLab from "../components/analysis/AnalysisLab";
 import RobustnessLab from "../components/analysis/RobustnessLab";
-import { RefreshCw, Terminal, CheckCircle2, Shield, AlertTriangle, ExternalLink, Activity, BarChart3 } from "lucide-react";
+import { RefreshCw, AlertTriangle, BarChart3, Terminal, CheckCircle2, Shield, ExternalLink } from "lucide-react";
 
 function DashboardContent({ onLogout }: { onLogout: () => void }) {
   const [selectedSymbol, setSelectedSymbol] = useState<string>("NVDA");
@@ -26,19 +26,12 @@ function DashboardContent({ onLogout }: { onLogout: () => void }) {
   const [syncNotice, setSyncNotice] = useState("");
   const [toast, setToast] = useState<{ message: string; tone: ToastTone } | null>(null);
 
-  // Modals state
+  const [isAnalysisLabOpen, setIsAnalysisLabOpen] = useState(false);
+  const [isRobustnessLabOpen, setIsRobustnessLabOpen] = useState(false);
+  const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
   const [isProviderModalOpen, setIsProviderModalOpen] = useState(false);
   const [isCacheModalOpen, setIsCacheModalOpen] = useState(false);
   const [isLookaheadModalOpen, setIsLookaheadModalOpen] = useState(false);
-  const [isAnalysisLabOpen, setIsAnalysisLabOpen] = useState(false);
-  const [isRobustnessLabOpen, setIsRobustnessLabOpen] = useState(false);
-
-  // Query system status
-  const { data: systemStatus } = useQuery({
-    queryKey: ["systemStatus"],
-    queryFn: getSystemStatus,
-    refetchInterval: 15000,
-  });
 
   // Query assets list
   const {
@@ -73,16 +66,16 @@ function DashboardContent({ onLogout }: { onLogout: () => void }) {
     if (isSyncing) return;
     setIsSyncing(true);
     setSyncError("");
-    setToast({ message: "Refreshing market data and updating the SQLite cache...", tone: "info" });
+    setToast({ message: "Refreshing market data...", tone: "info" });
     try {
       await syncCacheNow();
       await Promise.all([refetchAssets(), refetchHistory()]);
-      setSyncNotice("CACHE SYNCED");
-      setToast({ message: "Market cache synchronized for GOLD, BTC, and NVDA.", tone: "success" });
+      setSyncNotice("DATA UPDATED");
+      setToast({ message: "Market data updated for GOLD, BTC, and NVDA.", tone: "success" });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Cache sync failed";
+      const message = error instanceof Error ? error.message : "Market data refresh failed";
       setSyncError(message);
-      setSyncNotice("SYNC FAILED");
+      setSyncNotice("UPDATE FAILED");
       setToast({ message, tone: "error" });
     } finally {
       setIsSyncing(false);
@@ -93,7 +86,6 @@ function DashboardContent({ onLogout }: { onLogout: () => void }) {
     <div className="min-h-screen bg-[#080b11] text-slate-100 flex flex-col selection:bg-cyan-500 selection:text-black">
       {/* Terminal Header */}
       <Header
-        status={systemStatus}
         onLogout={onLogout}
       />
 
@@ -127,7 +119,7 @@ function DashboardContent({ onLogout }: { onLogout: () => void }) {
 
           <div className="flex items-center space-x-2">
             {syncNotice && (
-              <span className={`font-mono text-[10px] font-bold ${syncNotice === "CACHE SYNCED" ? "text-emerald-400" : "text-rose-400"}`}>
+              <span className={`font-mono text-[10px] font-bold ${syncNotice === "DATA UPDATED" ? "text-emerald-400" : "text-rose-400"}`}>
                 {syncNotice}
               </span>
             )}
@@ -139,13 +131,13 @@ function DashboardContent({ onLogout }: { onLogout: () => void }) {
               <RefreshCw
                 className={`w-3.5 h-3.5 ${historyFetching ? "animate-spin text-cyan-400" : ""}`}
               />
-              <span>SYNC CACHE</span>
+              <span>REFRESH DATA</span>
             </button>
           </div>
         </div>
 
         {syncError && (
-          <p className="mb-3 font-mono text-xs text-rose-400">CACHE SYNC ERROR: {syncError}</p>
+          <p className="mb-3 font-mono text-xs text-rose-400">DATA UPDATE ERROR: {syncError}</p>
         )}
 
         {/* Institutional Quantitative Metrics Panel */}
@@ -176,93 +168,58 @@ function DashboardContent({ onLogout }: { onLogout: () => void }) {
           }}
         />
 
-        {/* Interactive Architecture & Judge Verification Controls */}
-        <div className="mt-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-mono text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Activity className="w-3.5 h-3.5 text-cyan-400" />
-              SYSTEM INTEGRITY & ARCHITECTURE CONTROLS (CLICK TO TEST)
-            </span>
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <button onClick={() => setIsAnalysisLabOpen(true)} className="flex items-center gap-1.5 rounded border border-cyan-700/70 bg-cyan-950/40 px-2 py-1 font-mono text-[10px] text-cyan-300 transition-colors hover:border-cyan-400 sm:text-[11px]">
-                <BarChart3 className="h-3.5 w-3.5" /> QUANT ANALYSIS LABS
-              </button>
-              <button onClick={() => setIsRobustnessLabOpen(true)} className="flex items-center gap-1.5 rounded border border-emerald-700/70 bg-emerald-950/30 px-2 py-1 font-mono text-[10px] text-emerald-300 transition-colors hover:border-emerald-400 sm:text-[11px]">
-                ROBUSTNESS & REPORTS
-              </button>
-            </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800/80 pt-4">
+          <div>
+            <h3 className="font-mono text-xs font-bold tracking-wider text-slate-300">RESEARCH TOOLS</h3>
+            <p className="mt-1 font-mono text-[11px] text-slate-500">Explore strategies, risk, and performance for the selected asset.</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 font-mono text-xs">
-            {/* Interactive Card 1: Pluggable Data Layer */}
-            <button
-              onClick={() => setIsProviderModalOpen(true)}
-              className="p-3.5 bg-[#0b101b] border border-slate-800 hover:border-cyan-500 rounded-lg text-left transition-all hover:bg-[#0f1624] group cursor-pointer shadow-md"
-            >
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2 text-cyan-400 font-bold">
-                  <Terminal className="w-4 h-4" />
-                  <span>DATA-PROVIDER REPO PATTERN</span>
-                </div>
-                <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-cyan-400 transition-colors" />
-              </div>
-              <p className="text-slate-400 text-[11px] leading-relaxed mb-2">
-                Decoupled interface (`BaseDataProvider`). Live switch between Yahoo Finance and Hackathon Token (`rc_5dd...6d3`) with real-time failover testing.
-              </p>
-              <div className="flex items-center gap-2 text-[10px]">
-                <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-700/60 font-bold">
-                  ACTIVE: {systemStatus?.active_provider?.toUpperCase() || "YFINANCE"}
-                </span>
-                <span className="text-cyan-400 group-hover:underline">OPEN INSPECTOR â†’</span>
-              </div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setIsAnalysisLabOpen(true)} className="flex items-center gap-1.5 rounded border border-cyan-700/70 bg-cyan-950/40 px-2 py-1 font-mono text-[10px] text-cyan-300 transition-colors hover:border-cyan-400 sm:text-[11px]">
+              <BarChart3 className="h-3.5 w-3.5" /> ANALYSIS LAB
             </button>
-
-            {/* Interactive Card 2: Offline SQLite Persistence */}
-            <button
-              onClick={() => setIsCacheModalOpen(true)}
-              className="p-3.5 bg-[#0b101b] border border-slate-800 hover:border-emerald-500 rounded-lg text-left transition-all hover:bg-[#0d1820] group cursor-pointer shadow-md"
-            >
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>OFFLINE PERSISTENCE LAYER</span>
-                </div>
-                <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 transition-colors" />
-              </div>
-              <p className="text-slate-400 text-[11px] leading-relaxed mb-2">
-                Every bar cached in SQLite (`market_cache.db`). Test Airplane/Offline mode to prove sub-millisecond serving during bad Wi-Fi.
-              </p>
-              <div className="flex items-center gap-2 text-[10px]">
-                <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/60 font-bold">
-                  3,470 CACHED BARS
-                </span>
-                <span className="text-emerald-400 group-hover:underline">TEST OFFLINE MODE â†’</span>
-              </div>
-            </button>
-
-            {/* Interactive Card 3: Look-Ahead Bias Prevention */}
-            <button
-              onClick={() => setIsLookaheadModalOpen(true)}
-              className="p-3.5 bg-[#0b101b] border border-slate-800 hover:border-amber-500 rounded-lg text-left transition-all hover:bg-[#19150e] group cursor-pointer shadow-md"
-            >
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2 text-amber-400 font-bold">
-                  <Shield className="w-4 h-4" />
-                  <span>ZERO LOOK-AHEAD BIAS</span>
-                </div>
-                <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-400 transition-colors" />
-              </div>
-              <p className="text-slate-400 text-[11px] leading-relaxed mb-2">
-                Interactive Causal Audit Lab. Scrub historical dates and mathematically verify strict T+1 execution sequencing vs naive leaks.
-              </p>
-              <div className="flex items-center gap-2 text-[10px]">
-                <span className="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700/60 font-bold">
-                  CAUSALITY VERIFIED
-                </span>
-                <span className="text-amber-400 group-hover:underline">AUDIT CAUSALITY â†’</span>
-              </div>
+            <button onClick={() => setIsRobustnessLabOpen(true)} className="rounded border border-emerald-700/70 bg-emerald-950/30 px-2 py-1 font-mono text-[10px] text-emerald-300 transition-colors hover:border-emerald-400 sm:text-[11px]">
+              ROBUSTNESS & REPORTS
             </button>
           </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-3.5 font-mono text-xs md:grid-cols-3">
+          <FlipCard
+            id="provider"
+            flipped={Boolean(flippedCards.provider)}
+            onFlip={() => setFlippedCards((current) => ({ ...current, provider: !current.provider }))}
+            tone="cyan"
+            icon={<Terminal className="h-5 w-5" />}
+            title="DATA-PROVIDER REPO PATTERN"
+            details="Decoupled interface (BaseDataProvider). Live switch between Yahoo Finance and Hackathon Token with real-time failover testing."
+            status="ACTIVE DATA PROVIDER"
+            actionLabel="OPEN INSPECTOR"
+            onAction={() => setIsProviderModalOpen(true)}
+          />
+          <FlipCard
+            id="cache"
+            flipped={Boolean(flippedCards.cache)}
+            onFlip={() => setFlippedCards((current) => ({ ...current, cache: !current.cache }))}
+            tone="emerald"
+            icon={<CheckCircle2 className="h-5 w-5" />}
+            title="OFFLINE PERSISTENCE LAYER"
+            details="Every bar is cached for dependable access. Test Airplane/Offline mode to verify charts and indicators during bad Wi-Fi."
+            status="3,470 CACHED BARS"
+            actionLabel="TEST OFFLINE MODE"
+            onAction={() => setIsCacheModalOpen(true)}
+          />
+          <FlipCard
+            id="lookahead"
+            flipped={Boolean(flippedCards.lookahead)}
+            onFlip={() => setFlippedCards((current) => ({ ...current, lookahead: !current.lookahead }))}
+            tone="amber"
+            icon={<Shield className="h-5 w-5" />}
+            title="ZERO LOOK-AHEAD BIAS"
+            details="Interactive causal audit. Scrub historical dates and verify strict T+1 execution sequencing against naive leaks."
+            status="CAUSALITY VERIFIED"
+            actionLabel="AUDIT CAUSALITY"
+            onAction={() => setIsLookaheadModalOpen(true)}
+          />
         </div>
       </main>
 
@@ -275,9 +232,6 @@ function DashboardContent({ onLogout }: { onLogout: () => void }) {
               DISCLAIMER: Quantitative research platform. Metrics are computed on historical market data and do not predict future returns.
             </span>
           </div>
-          <div>
-            <span>SYSTEM: FASTAPI + NEXT.JS 14 // HACKATHON BUILD</span>
-          </div>
         </div>
       </footer>
 
@@ -289,20 +243,10 @@ function DashboardContent({ onLogout }: { onLogout: () => void }) {
         />
       )}
 
-      {/* Interactive Modals */}
-      <ProviderModal
-        isOpen={isProviderModalOpen}
-        onClose={() => setIsProviderModalOpen(false)}
-      />
-      <CacheModal
-        isOpen={isCacheModalOpen}
-        onClose={() => setIsCacheModalOpen(false)}
-      />
-      <LookaheadModal
-        isOpen={isLookaheadModalOpen}
-        onClose={() => setIsLookaheadModalOpen(false)}
-        selectedSymbol={selectedSymbol}
-      />
+      <ProviderModal isOpen={isProviderModalOpen} onClose={() => setIsProviderModalOpen(false)} />
+      <CacheModal isOpen={isCacheModalOpen} onClose={() => setIsCacheModalOpen(false)} />
+      <LookaheadModal isOpen={isLookaheadModalOpen} onClose={() => setIsLookaheadModalOpen(false)} selectedSymbol={selectedSymbol} />
+
       <AnalysisLab
         isOpen={isAnalysisLabOpen}
         selectedSymbol={selectedSymbol}
@@ -319,16 +263,78 @@ function DashboardContent({ onLogout }: { onLogout: () => void }) {
   );
 }
 
+function FlipCard({
+  id,
+  flipped,
+  onFlip,
+  tone,
+  icon,
+  title,
+  details,
+  status,
+  actionLabel,
+  onAction,
+}: {
+  id: string;
+  flipped: boolean;
+  onFlip: () => void;
+  tone: "cyan" | "emerald" | "amber";
+  icon: React.ReactNode;
+  title: string;
+  details: string;
+  status: string;
+  actionLabel: string;
+  onAction: () => void;
+}) {
+  const colors = {
+    cyan: { border: "border-cyan-700/70", text: "text-cyan-300", hover: "hover:border-cyan-400", bg: "bg-cyan-950/40" },
+    emerald: { border: "border-emerald-700/70", text: "text-emerald-300", hover: "hover:border-emerald-400", bg: "bg-emerald-950/30" },
+    amber: { border: "border-amber-700/70", text: "text-amber-300", hover: "hover:border-amber-400", bg: "bg-amber-950/30" },
+  }[tone];
+
+  return (
+    <div className="[perspective:1000px]">
+      <div className={`relative min-h-[184px] transition-transform duration-500 [transform-style:preserve-3d] ${flipped ? "[transform:rotateY(180deg)]" : ""}`}>
+        <button type="button" onClick={onFlip} aria-label={`Show details for ${title}`} className={`absolute inset-0 flex items-center justify-center gap-3 rounded-lg border bg-[#0b101b] p-4 text-center shadow-md [backface-visibility:hidden] ${colors.border} ${colors.hover}`}>
+          <span className={colors.text}>{icon}</span>
+          <span className={`text-xs font-bold tracking-wider ${colors.text}`}>{title}</span>
+        </button>
+        <div className={`absolute inset-0 rounded-lg border bg-[#0b101b] p-4 shadow-md [backface-visibility:hidden] [transform:rotateY(180deg)] ${colors.border}`}>
+          <div className={`mb-2 flex items-center gap-2 font-bold ${colors.text}`}>
+            {icon}
+            <span className="text-[11px] tracking-wide">{title}</span>
+          </div>
+          <p className="min-h-[58px] text-[11px] leading-relaxed text-slate-400">{details}</p>
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <span className={`rounded border px-2 py-0.5 text-[10px] font-bold ${colors.border} ${colors.text} ${colors.bg}`}>{status}</span>
+            <button type="button" onClick={onAction} className={`flex items-center gap-1 text-[10px] font-bold ${colors.text} hover:underline`}>
+              <ExternalLink className="h-3 w-3" /> {actionLabel}
+            </button>
+          </div>
+          <button type="button" onClick={onFlip} className="mt-3 text-[10px] text-slate-600 hover:text-slate-300">FLIP BACK</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [authReady, setAuthReady] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    setIsAuthenticated(Boolean(window.sessionStorage.getItem("quant-terminal-session")));
-    setAuthReady(true);
+    try {
+      setIsAuthenticated(Boolean(window.sessionStorage.getItem("quant-terminal-session")));
+    } catch {
+      setIsAuthenticated(false);
+    } finally {
+      setAuthReady(true);
+    }
   }, []);
 
-  if (!authReady) return null;
+  if (!authReady) {
+    return <main className="flex min-h-screen items-center justify-center bg-[#080b11] font-mono text-xs text-cyan-300">LOADING QUANT_TERMINAL...</main>;
+  }
   if (!isAuthenticated) {
     return (
       <AuthScreen

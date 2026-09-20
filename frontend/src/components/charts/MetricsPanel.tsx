@@ -24,13 +24,6 @@ function MetricCard({ label, detail, children }: MetricCardProps) {
       aria-label={`${label}: ${detail}`}
       className="group relative rounded-lg outline-none focus-visible:ring-1 focus-visible:ring-cyan-400"
     >
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-[min(240px,calc(100vw-2rem))] -translate-x-1/2 translate-y-1 opacity-0 transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
-        <div className="rounded border border-cyan-700/70 bg-[#101a2b] px-3 py-2 text-[10px] leading-relaxed text-slate-300 shadow-xl shadow-black/40">
-          <div className="mb-0.5 font-bold tracking-wide text-cyan-300">{label}</div>
-          {detail}
-        </div>
-        <div className="mx-auto h-2 w-2 -translate-y-1 rotate-45 border-b border-r border-cyan-700/70 bg-[#101a2b]" />
-      </div>
       {children}
     </div>
   );

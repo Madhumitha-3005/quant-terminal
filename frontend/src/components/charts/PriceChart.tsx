@@ -363,7 +363,7 @@ export default function PriceChart({
           )}
         </div>
         <div className="text-[10px] text-slate-500">
-          REAL OHLCV DATA SOURCE: YAHOO FINANCE & SQLITE REPO
+          Historical market data with calculated indicators
         </div>
       </div>
     </div>

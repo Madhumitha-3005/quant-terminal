@@ -31,7 +31,7 @@ export default function RobustnessLab({ isOpen, symbol, onClose, onNotify }: Rob
         const generated = await generateBacktestReport(symbol, strategy, metrics);
         setReport(generated.answer); setReportMetrics(metrics);
       }
-      onNotify("Analysis completed with backend-calculated results.", "success");
+      onNotify("Analysis completed successfully.", "success");
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "Analysis failed";
       setError(message); onNotify(message, "error");
@@ -54,7 +54,7 @@ export default function RobustnessLab({ isOpen, symbol, onClose, onNotify }: Rob
       {error && <div className="mt-3 rounded border border-rose-800/70 bg-rose-950/20 p-3 text-xs text-rose-300">{error}</div>}
       {!error && tab === "heatmap" && <Heatmap result={robustness} min={min} max={max} />}
       {!error && tab === "monte-carlo" && <MonteCarloChart result={monteCarlo} />}
-      {!error && tab === "report" && <div className="mt-4 space-y-3">{report ? <><div className="rounded border border-slate-800 bg-[#0e1626] p-4 text-sm leading-7 text-slate-300">{report}</div><button onClick={downloadReport} className="flex items-center gap-2 rounded border border-cyan-700 px-3 py-2 text-xs text-cyan-300"><Download className="h-3.5 w-3.5" /> DOWNLOAD MARKDOWN REPORT</button></> : <Empty text="Generate a report from the selected strategy's actual backend metrics." />}</div>}
+      {!error && tab === "report" && <div className="mt-4 space-y-3">{report ? <><div className="rounded border border-slate-800 bg-[#0e1626] p-4 text-sm leading-7 text-slate-300">{report}</div><button onClick={downloadReport} className="flex items-center gap-2 rounded border border-cyan-700 px-3 py-2 text-xs text-cyan-300"><Download className="h-3.5 w-3.5" /> DOWNLOAD MARKDOWN REPORT</button></> : <Empty text="Generate a report from the selected strategy's metrics." />}</div>}
     </div>
   </div>;
 }
